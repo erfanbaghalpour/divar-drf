@@ -7,6 +7,7 @@ from .serializers import UserSerializer
 
 class UserView(APIView):
     serializer_class = UserSerializer
+
     def get(self, request):
         user = request.user
         serializer = UserSerializer(instance=user)
