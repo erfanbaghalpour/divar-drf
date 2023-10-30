@@ -31,3 +31,12 @@ class AdCreateView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AdDetailView(APIView):
+    serializer_class = AdSerializer
+
+    def get(self, request, pk):
+        instance = Ad.objects.get(id=pk)
+        serializer = AdSerializer(instance=instance)
+        return Response(serializer.data, status=status.HTTP_200_OK)
