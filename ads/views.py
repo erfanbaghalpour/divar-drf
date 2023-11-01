@@ -1,3 +1,4 @@
+from django.http import Http404
 from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -7,6 +8,7 @@ from .models import Ad
 from .serializers import AdSerializer
 from rest_framework import status
 from .pagination import StandardResultsSetPagination
+from .permissions import IsPublisherOrReadOnly
 
 
 class AdListView(APIView, StandardResultsSetPagination):
@@ -34,9 +36,29 @@ class AdCreateView(APIView):
 
 
 class AdDetailView(APIView):
+    permission_classes = [IsAuthenticated, IsPublisherOrReadOnly]
     serializer_class = AdSerializer
+    parser_classes = [MultiPartParser]
+
+    def get_object(self, pk):
+        try:
+            return Ad.objects.get(pk=pk)
+        except Ad.DoesNotExist:
+            raise Http404
 
     def get(self, request, pk):
-        instance = Ad.objects.get(id=pk)
-        serializer = AdSerializer(instance=instance)
+        ad = self.get_object(pk)
+        serializer = AdSerializer(instance=ad)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def put(self, request, pk):
+        ad = self.get_object(pk)
+        serializer = AdSerializer(instance=ad, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def delete(self, request, pk):
+        ad = self.get_object(pk)
+        ad.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
