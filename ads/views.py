@@ -9,6 +9,7 @@ from .serializers import AdSerializer
 from rest_framework import status
 from .pagination import StandardResultsSetPagination
 from .permissions import IsPublisherOrReadOnly
+from django.db.models import Q
 
 
 class AdListView(APIView, StandardResultsSetPagination):
@@ -62,3 +63,15 @@ class AdDetailView(APIView):
         ad = self.get_object(pk)
         ad.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class AdSearchView(APIView, StandardResultsSetPagination):
+    """"ex: api/ads/search/?q=something"""
+    serializer_class = AdSerializer
+
+    def get(self, request):
+        q = request.GET.get('q')
+        queryset = Ad.objects.filter(Q(title=q) | Q(caption=q))
+        result = self.paginate_queryset(queryset, request)
+        serializer = AdSerializer(instance=result, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
